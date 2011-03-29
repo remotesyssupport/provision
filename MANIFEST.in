@@ -1,0 +1,4 @@
+include README.rst
+include provision/empty
+recursive-include provision/defaults *
+recursive-include provision/secrets *
