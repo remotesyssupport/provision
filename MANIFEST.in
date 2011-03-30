@@ -1,4 +1,6 @@
 include README.rst
+include NOTICE
+include LICENSE
+include Authors
 include provision/empty
 recursive-include provision/defaults *
-recursive-include provision/secrets *
