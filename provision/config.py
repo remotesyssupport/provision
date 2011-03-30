@@ -242,7 +242,7 @@ def reconfig(main_parser):
     configure_cwd(parsed.config_paths)
     return main_parser().parse_args(remaining_args)
 
-defaults = ['defaults', 'secrets']
+defaults = ['defaults']
 if os.path.exists(LOCAL_DEFAULTS):
     defaults.append(LOCAL_DEFAULTS)
 configure(defaults)
