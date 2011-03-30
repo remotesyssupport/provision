@@ -5,7 +5,7 @@ setup(
     version='0.9.0',
     author='genForma Corporation',
     author_email='code@genforma.com',
-    url='http://pypi.python.org/pypi/provision/',
+    url='https://github.com/genforma/provision',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
