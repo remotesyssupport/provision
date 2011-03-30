@@ -6,11 +6,11 @@ Introduction
 ============
 
 Provision enables users to deploy customized nodes, either via shell
-commands, or from a Python program, called as a library.  Building on
-Apache Libcloud, which provides a common API for various providers,
-Provision allows users to specify, for a new node, which files get
-installed, which scripts get run, and which public keys have access,
-in a flexible yet repeatable way.
+commands, or as a Python library.  Building on Apache Libcloud, which
+provides a common API for various providers, Provision allows users to
+specify, for a new node, which files get installed, which scripts get
+run, and which public keys have access, in a flexible yet repeatable
+way.
 
 In addition to basic configuration decisions (such as disk image,
 size, provider, location, and name), Provision supports four
