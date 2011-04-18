@@ -232,13 +232,13 @@ def add_auth_args(parser, config):
     parser.add_argument('-k', '--secret_key', default=config.DEFAULT_SECRET_KEY)
     return parser
 
-def reconfig(main_parser):
+def reconfig(main_parser, args=sys.argv[1:]):
 
     """Parse any config paths and reconfigure defaults with them
     http://docs.python.org/library/argparse.html#partial-parsing
     Return parsed remaining arguments"""
 
-    parsed, remaining_args = parser().parse_known_args()
+    parsed, remaining_args = parser().parse_known_args(args)
     configure_cwd(parsed.config_paths)
     return main_parser().parse_args(remaining_args)
 
