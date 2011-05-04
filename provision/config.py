@@ -1,3 +1,16 @@
+"""Configuration of provision apps is a two step process.
+
+The first step specifies which directories to use for configuring
+defaults, defining resource bundles, setting API keys and which public
+keys to trust. This allows users to use site-specific configuration
+directories outside the source tree.
+
+The second step specifies which bundles to install on the new node,
+and any other details specific to the deployment.
+
+Each bundle represents a set of files to be copied and scripts to be
+run during node deployment."""
+
 import argparse
 import os.path
 import random
@@ -9,20 +22,9 @@ import socket; socket.setdefaulttimeout(30.0) # give APIs plenty of time
 
 import libcloud.types
 
-__doc__ = """Two-step application configuration
+import provision.collections
 
-Configuration of provision apps is a two step process.
-
-The first step specifies which directories to use for configuring
-defaults, defining resource bundles, setting API keys and the
-like. This allows users to easily use site-specific configuration
-directories outside the source tree.
-
-The second step specifies which bundles to install on the new node,
-and any other details specific to the deployment.
-
-Each bundle represents a set of files to be copied and scripts to be
-run during node deployment."""
+join = os.path.join
 
 PROVIDERS = {
     'rackspace': libcloud.types.Provider.RACKSPACE}
@@ -62,7 +64,9 @@ PUBKEYS = []
 SUBMAP = {}
 BUNDLEMAP = {}
 
-COMMON_BUNDLES = []
+BOOTSTRAPPED_IMAGE_NAMES = []
+DEFAULT_BUNDLES = [] # these get installed if image name in BOOTSTRAPPED_IMAGE_NAMES
+DEFAULT_BOOTSTRAP_BUNDLES = [] # otherwise these get installed
 
 PATH = None
 
@@ -85,19 +89,20 @@ class Bundle(object):
         @type filemap: C{dict}
         @keyword filemap: Maps target path to source path for files
         """
-        self.scriptmap = scriptmap or {}
+        self.scriptmap = scriptmap or provision.collections.OrderedDict()
         self.filemap = filemap or {}
 
 def makemap(filenames, sourcedir, targetdir=None):
 
-    """Return a dict which maps filenames coming from a single local
-    source directory to a single target directory.  Most useful for
-    scripts, whose location when run is often unimportant, and so can
-    all be placed in common directory."""
+    """Return an OrderedDict (to preserve script run order) which maps
+    filenames coming from a single local source directory to a single
+    target directory.  Most useful for scripts, whose location when
+    run is often unimportant, and so can all be placed in common
+    directory."""
 
-    join = os.path.join
     if targetdir is None: targetdir = DEFAULT_TARGETDIR
-    return dict((join(targetdir, f), join(sourcedir, f)) for f in filenames)
+    return provision.collections.OrderedDict(
+        (join(targetdir, f),  join(sourcedir, f)) for f in filenames)
 
 def add_bundle(name, scripts=[], files=[], scriptsdir=SCRIPTSDIR, filesdir=FILESDIR):
 
@@ -108,7 +113,6 @@ def add_bundle(name, scripts=[], files=[], scriptsdir=SCRIPTSDIR, filesdir=FILES
     It converts those lists into maps and then calls new_bundle() to
     actually create the Bundle and add it to BUNDLEMAP"""
 
-    join = os.path.join
     scriptmap = makemap(scripts, join(PATH, scriptsdir))
     filemap = dict(zip(files, [join(PATH, filesdir, os.path.basename(f)) for f in files]))
     new_bundle(name, scriptmap, filemap)
@@ -182,7 +186,7 @@ def load_pubkeys(loadpath, pubkeys):
     filenames = os.listdir(loadpath)
     logger.debug('loading authorized pubkeys {0}'.format(filenames))
     for filename in filenames:
-        pubkeys.append(open(os.path.join(loadpath, filename)).read())
+        pubkeys.append(open(join(loadpath, filename)).read())
 
 def normalize_path(path):
 
@@ -191,7 +195,7 @@ def normalize_path(path):
     if os.path.isabs(path):
         return path
     else:
-        return os.path.join(CODEPATH, path)
+        return join(CODEPATH, path)
 
 def configure(paths):
 
@@ -203,7 +207,7 @@ def configure(paths):
         return
     for path in [normalize_path(p) for p in paths]:
         logger.debug('configuration path {0}'.format(path))
-        pubkeys_path = os.path.join(path, PUBKEYSDIR)
+        pubkeys_path = join(path, PUBKEYSDIR)
         if os.path.exists(pubkeys_path):
             load_pubkeys(pubkeys_path, PUBKEYS)
         init_module(path)
@@ -213,7 +217,7 @@ def configure_cwd(paths):
     """Configure with non-absolute paths relative to current working dir"""
 
     cwd = os.getcwd()
-    configure([os.path.join(cwd, p) for p in paths if not os.path.isabs(p)])
+    configure([join(cwd, p) for p in paths if not os.path.isabs(p)])
 
 def parser():
 
