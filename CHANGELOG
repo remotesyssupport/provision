@@ -1,0 +1,6 @@
+0.9.1 Wed May  4 14:28:37 PDT 2011
+
+* Add ability to specify images as bootstrapped to change default bundles
+* Order of bundles and scripts in bundles now preserved in script run order
+  
+
