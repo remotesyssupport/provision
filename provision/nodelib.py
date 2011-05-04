@@ -1,3 +1,5 @@
+"""Implementation of node listing, deployment and destruction"""
+
 from __future__ import absolute_import
 
 import datetime
@@ -10,10 +12,9 @@ import libcloud.deployment
 
 import provision.meta as meta
 import provision.config as config
+import provision.collections
 logger = config.logger
 
-
-__doc__ = """Implementation of node listing, deployment and destruction"""
 
 def get_driver(secret_key=config.DEFAULT_SECRET_KEY, userid=config.DEFAULT_USERID,
                provider=config.DEFAULT_PROVIDER):
@@ -129,7 +130,8 @@ class Deployment(object):
     """Split the deployment process into two steps"""
 
     def __init__(self, name=None, bundles=[], pubkey=config.DEFAULT_PUBKEY,
-                 prefix=config.DEFAULT_NAME_PREFIX, subvars=[]):
+                 prefix=config.DEFAULT_NAME_PREFIX, image_name=config.DEFAULT_IMAGE_NAME,
+                 subvars=[]):
 
         """Initialize a node deployment.
 
@@ -145,9 +147,12 @@ class Deployment(object):
         The pubkey is concatented with any other public keys loaded
         during configuration and used as the first step in the
         multi-step deployment.  Additional steps represent the scripts
-        to be run."""
+        to be run.
 
-        #logger.debug('Deployment.__init__()')
+        The image_name is used to determine which set of default
+        bundles to install, as well as to actually get the image id in
+        deploy()."""
+
         self.name = name or prefix + config.random_str()
         config.SUBMAP['node_name'] = self.name
         merge_keyvals_into_map(subvars, config.SUBMAP)
@@ -156,9 +161,18 @@ class Deployment(object):
         self.pubkeys = [pubkey]
         self.pubkeys.extend(config.PUBKEYS)
 
+        self.image_name = image_name
+
         self.filemap = {}
-        scriptmap = {}
-        for bundle in config.COMMON_BUNDLES + bundles:
+        scriptmap = provision.collections.OrderedDict() # preserve script run order
+
+        if image_name in config.BOOTSTRAPPED_IMAGE_NAMES:
+            install_bundles = config.DEFAULT_BUNDLES[:]
+        else:
+            install_bundles = config.DEFAULT_BOOTSTRAP_BUNDLES[:]
+        install_bundles.extend(bundles)
+
+        for bundle in install_bundles:
             logger.debug('loading bundle {0}'.format(bundle))
             merge_load(config.BUNDLEMAP[bundle].filemap.items(), self.filemap)
             merge_load(config.BUNDLEMAP[bundle].scriptmap.items(), scriptmap)
@@ -175,10 +189,10 @@ class Deployment(object):
         self.deployment = libcloud.deployment.MultiStepDeployment(steps)
 
     def deploy(self, driver, location_id=config.DEFAULT_LOCATION_ID,
-               size_id=config.DEFAULT_SIZE_ID, image_name=config.DEFAULT_IMAGE_NAME):
+               size_id=config.DEFAULT_SIZE_ID):
 
         """Use driver to deploy node, with optional ability to specify
-        location id, size id and image name.
+        location id and size id.
 
         First, obtain location object from driver.  Next, get the
         size.  Then, get the image.
@@ -194,7 +208,7 @@ class Deployment(object):
         size = driver.list_sizes()[size_id]
         logger.debug('size %s' % size)
         image = [i for i in driver.list_images()
-                 if i.name == config.IMAGE_NAMES[image_name]][0]
+                 if i.name == config.IMAGE_NAMES[self.image_name]][0]
         logger.debug('image %s' % image)
 
         self.metadata = {'created': str(datetime.datetime.now())}
