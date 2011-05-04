@@ -27,9 +27,10 @@ def parser():
 def deploy(args=None):
     parsed = config.reconfig(parser, args)
     deployment = nodelib.Deployment(name=parsed.name, bundles=parsed.bundles,
-                                    prefix=parsed.prefix, subvars=parsed.subvars)
+                                    prefix=parsed.prefix, image_name=parsed.image,
+                                    subvars=parsed.subvars)
     driver = nodelib.get_driver(parsed.secret_key, parsed.userid, parsed.provider)
-    node = deployment.deploy(driver, parsed.location, parsed.size, parsed.image)
+    node = deployment.deploy(driver, parsed.location, parsed.size)
     if parsed.verbose:
         print(node)
     if parsed.description_file:
