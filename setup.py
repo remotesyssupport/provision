@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='provision',
-    version='0.9.0',
+    version='0.9.1',
     author='genForma Corporation',
     author_email='code@genforma.com',
     url='https://github.com/genforma/provision',
