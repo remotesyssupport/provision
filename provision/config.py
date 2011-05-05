@@ -221,7 +221,7 @@ def configure_cwd(paths):
 
 def parser():
 
-    """Return an parser for setting multiple configuration paths"""
+    """Return a parser for setting multiple configuration paths"""
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config_paths', default=[], action='append')
@@ -229,7 +229,7 @@ def parser():
 
 def add_auth_args(parser, config):
 
-    """Return an parser for configuring authentication parameters"""
+    """Return a parser for configuring authentication parameters"""
 
     parser.add_argument('-p', '--provider', default=config.DEFAULT_PROVIDER)
     parser.add_argument('-u', '--userid', default=config.DEFAULT_USERID)
