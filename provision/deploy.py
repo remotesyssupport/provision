@@ -40,7 +40,7 @@ def deploy(args=None):
 def main():
     try:
         node = deploy()
-        return sum([sd.exit_status for sd in node.script_deployments])
+        return node.sum_exit_status()
     except:
         traceback.print_exc(file=sys.stderr)
         return 1
