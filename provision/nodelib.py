@@ -6,6 +6,7 @@ import datetime
 import itertools
 import json
 import os
+import re
 
 import libcloud.providers
 import libcloud.deployment
@@ -211,8 +212,7 @@ class Deployment(object):
         logger.debug('location %s' % location)
         size = driver.list_sizes()[size_id]
         logger.debug('size %s' % size)
-        image = [i for i in driver.list_images()
-                 if i.name == config.IMAGE_NAMES[self.image_name]][0]
+        image = image_from_name(config.IMAGE_NAMES[self.image_name], driver.list_images())
         logger.debug('image %s' % image)
 
         self.metadata = {'created': str(datetime.datetime.now())}
@@ -226,6 +226,28 @@ class Deployment(object):
                                   location=location, image=image, size=size)
         node.script_deployments = self.script_deployments # retain exit_status, stdout, stderr
         return NodeProxy(node)
+
+
+def image_from_name(name, images):
+
+    """Return an image from a list of images.  If the name is an exact
+    match, return the last exactly matching image.  Otherwise, sort
+    images by 'natural' order, using decorate-sort-undecorate, and
+    return the largest.
+
+    see:
+    http://code.activestate.com/recipes/285264-natural-string-sorting/
+    """
+
+    prefixed_images = [i for i in images if i.name.startswith(name)]
+
+    if name in [i.name for i in prefixed_images]:
+        return [i for i in prefixed_images if i.name == name][-1]
+
+    decorated = sorted(
+        [(int(re.search('\d+', i.name).group(0)), i) for i in prefixed_images])
+    return [i[1] for i in decorated][-1]
+
 
 def destroy_by_name(name, driver):
 
