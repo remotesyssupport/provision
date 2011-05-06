@@ -82,6 +82,10 @@ class NodeProxy(object):
         logger.info('destroying node %s' % node)
         return node.destroy()
 
+    def sum_exit_status(self):
+        """Return the sum of all deployed scripts' exit_status"""
+        return sum([sd.exit_status for sd in self.node.script_deployments])
+
 
 def named_script_deployments(path, script, submap=None):
 
