@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """Configuration of provision apps is a two step process.
 
 The first step specifies which directories to use for configuring
@@ -17,6 +19,7 @@ import random
 import re
 import string
 import sys
+import traceback
 
 import socket; socket.setdefaulttimeout(30.0) # give APIs plenty of time
 
@@ -74,6 +77,36 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)s %(levelname)s %(message)s')
 logger = logging.getLogger('provision')
+
+
+# error codes for corresponding exceptions
+EXCEPTION = 11
+SERVICE_UNAVAILABLE = 12
+MALFORMED_RESPONSE = 13
+TIMEOUT = 14
+DEPLOYMENT_ERROR = 15
+
+def handle_errors(callback, parsed=None, out=sys.stderr):
+    try:
+        if parsed:
+            return callback(parsed)
+        else:
+            return callback()
+    except libcloud.types.DeploymentError as e:
+        print(e, file=out)
+        if hasattr(e, 'value') and hasattr(e.value, 'args') and len(e.value.args) > 0 and \
+                'open_sftp_client' in e.value.args[0]:
+            print('Timeout', file=out)
+            return TIMEOUT
+        return DEPLOYMENT_ERROR
+    except libcloud.types.MalformedResponseError as e:
+        print(e, file=out)
+        if 'Service Unavailable' in e.body:
+            return SERVICE_UNAVAILABLE
+        return MALFORMED_RESPONSE
+    except:
+        traceback.print_exc(file=out)
+        return EXCEPTION
 
 
 class Bundle(object):
