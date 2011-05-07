@@ -81,12 +81,18 @@ logger = logging.getLogger('provision')
 
 # error codes for corresponding exceptions
 EXCEPTION = 11
-SERVICE_UNAVAILABLE = 12
-MALFORMED_RESPONSE = 13
-TIMEOUT = 14
-DEPLOYMENT_ERROR = 15
+MALFORMED_RESPONSE = 12
+SERVICE_UNAVAILABLE = 13
+DEPLOYMENT_ERROR = 14
+TIMEOUT = 15
 
 def handle_errors(callback, parsed=None, out=sys.stderr):
+
+    """Execute the callback, optionally passing it parsed, and return
+    its return value.  If an exception occurs, determine which kind it
+    is, output an appropriate message, and return the corresponding
+    error code."""
+
     try:
         if parsed:
             return callback(parsed)
