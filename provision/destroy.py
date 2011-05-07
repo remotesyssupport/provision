@@ -17,6 +17,14 @@ def parser():
     parser.add_argument('-v', '--verbose', default=True)
     return parser
 
+def destroy(parsed):
+    driver = nodelib.get_driver(parsed.secret_key, parsed.userid, parsed.provider)
+    if nodelib.destroy_by_name(parsed.name, driver):
+        return 0
+    else:
+        print('ERROR: unable to destroy node', file=sys.stderr)
+        return 1
+
 def main():
     parsed = config.reconfig(parser)
     if parsed.verbose:
@@ -25,18 +33,14 @@ def main():
         try:
             dom = xml.dom.minidom.parse(parsed.testresults)
         except:
-            print('ERROR: could not parse {0.testresults}'.format(parsed), file=sys.stderr)
-            return 1
+            print('ERROR: could not parse {0.testresults}, aborting destroy'.format(parsed),
+                  file=sys.stderr)
+            return 2
         suite = dom.getElementsByTagName('testsuite')[0]
         if int(suite.getAttribute('errors')) != 0 or int(suite.getAttribute('failures')) != 0:
             print('ERROR: not all tests passed, aborting destroy', file=sys.stderr)
-            return 1
-    driver = nodelib.get_driver(parsed.secret_key, parsed.userid, parsed.provider)
-    if nodelib.destroy_by_name(parsed.name, driver):
-        return 0
-    else:
-        print('ERROR: unable to destroy node', file=sys.stderr)
-        return 1
+            return 3
+    return config.handle_errors(destroy, parsed)
 
 if __name__ == '__main__':
     sys.exit(main())
