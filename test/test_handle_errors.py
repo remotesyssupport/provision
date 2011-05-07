@@ -4,7 +4,7 @@ import libcloud.types
 
 import provision.config as config
 
-class Test(unittest.TestCase):
+class TestHandleErrors(unittest.TestCase):
 
     def setUp(self):
         self.devnull = open('/dev/null', 'w')
@@ -12,33 +12,33 @@ class Test(unittest.TestCase):
     def tearDown(self):
         self.devnull.close()
 
-    def test_handle_errors_simple_success(self):
+    def test_simple_success(self):
         assert config.handle_errors(lambda: 0) == 0
 
-    def test_handle_errors_parsed_success(self):
+    def test_parsed_success(self):
         assert config.handle_errors(lambda parsed: 0, object()) == 0
 
-    def test_handle_errors_simple_fail(self):
+    def test_simple_fail(self):
         assert config.handle_errors(lambda: 1) == 1
 
-    def test_handle_errors_generic_exception(self):
+    def test_generic_exception(self):
         def raises():
              raise Exception()
         assert config.handle_errors(raises, out=self.devnull) == config.EXCEPTION
 
-    def test_handle_errors_service_unavailable(self):
+    def test_service_unavailable(self):
         def raises():
              raise libcloud.types.MalformedResponseError(
                  "Failed to parse XML", body='Service Unavailable', driver=object())
         assert config.handle_errors(raises, out=self.devnull) == config.SERVICE_UNAVAILABLE
 
-    def test_handle_errors_malformed_response(self):
+    def test_malformed_response(self):
         def raises():
              raise libcloud.types.MalformedResponseError(
                  "Failed to parse XML", body='A bad response', driver=object())
         assert config.handle_errors(raises, out=self.devnull) == config.MALFORMED_RESPONSE
 
-    def test_handle_errors_timeout(self):
+    def test_timeout(self):
         def raises():
             try:
                 None.open_sftp_client
@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
                 raise libcloud.types.DeploymentError(object(), e)
         assert config.handle_errors(raises, out=self.devnull) == config.TIMEOUT
 
-    def test_handle_errors_deployment_error(self):
+    def test_deployment_error(self):
         def raises():
             try:
                 None.foo
