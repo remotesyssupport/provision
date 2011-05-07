@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import sys
-import traceback
 import argparse
 
 import provision.config as config
@@ -37,13 +36,12 @@ def deploy(args=None):
         node.write_json(parsed.description_file)
     return node
 
+def deploy_retcode():
+    node = deploy()
+    return node.sum_exit_status()
+
 def main():
-    try:
-        node = deploy()
-        return node.sum_exit_status()
-    except:
-        traceback.print_exc(file=sys.stderr)
-        return 1
+    return config.handle_errors(deploy_retcode)
 
 if __name__ == '__main__':
     sys.exit(main())
