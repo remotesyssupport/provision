@@ -90,5 +90,5 @@ The following commands are available after installation:
   print a list of nodes 
   
 * destroy-node
-  Typical usage: $ deploy-node nodename
+  Typical usage: $ destroy-node nodename
   destroy node named 'nodename'
