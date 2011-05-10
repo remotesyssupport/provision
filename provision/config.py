@@ -227,7 +227,7 @@ def load_pubkeys(loadpath, pubkeys):
     for filename in filenames:
         pubkeys.append(open(join(loadpath, filename)).read())
 
-def normalize_path(path, relative_to):
+def normalize_path(path, relative_to=os.getcwd()):
 
     """Return normalized path.  If path is not user-expandable or
     absolute, treat it relative to relative_to"""
