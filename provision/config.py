@@ -46,6 +46,9 @@ DEFAULT_PUBKEY = open(os.path.expanduser('~/.ssh/id_rsa.pub')).read()
 # due to module naming restrictions
 LOCAL_DEFAULTS = os.path.expanduser('~/.provision/secrets')
 
+VIRTUAL_ENV = os.getenv('VIRTUAL_ENV')
+VIRTUAL_DEFAULTS = join(VIRTUAL_ENV, 'provision_secrets') if VIRTUAL_ENV else ''
+
 DEFAULT_TARGETDIR = '/root/deploy'
 
 DEFAULT_NAME_PREFIX = 'deploy-test-'
@@ -285,5 +288,7 @@ def reconfig(main_parser, args=sys.argv[1:]):
 defaults = ['defaults']
 if os.path.exists(LOCAL_DEFAULTS):
     defaults.append(LOCAL_DEFAULTS)
+if os.path.exists(VIRTUAL_DEFAULTS):
+    defaults.append(VIRTUAL_DEFAULTS)
 configure(defaults, CODEPATH)
 
