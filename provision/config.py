@@ -232,7 +232,7 @@ def normalize_path(path, relative_to):
     """Return normalized path.  If path is not user-expandable or
     absolute, treat it relative to relative_to"""
 
-    path = os.path.expanduser(path)
+    path = os.path.expanduser(os.path.normpath(path))
 
     if os.path.isabs(path):
         return path
