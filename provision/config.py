@@ -227,16 +227,19 @@ def load_pubkeys(loadpath, pubkeys):
     for filename in filenames:
         pubkeys.append(open(join(loadpath, filename)).read())
 
-def normalize_path(path):
+def normalize_path(path, relative_to):
 
-    """If path is not absolute, assume it's relative to CODEPATH"""
+    """Return normalized path.  If path is not user-expandable or
+    absolute, treat it relative to relative_to"""
+
+    path = os.path.expanduser(path)
 
     if os.path.isabs(path):
         return path
     else:
-        return join(CODEPATH, path)
+        return join(relative_to, path)
 
-def configure(paths):
+def configure(paths, relative_to):
 
     """Iterate on each configuration path, collecting all public keys
     destined for the new node's root account's authorized keys.
@@ -244,26 +247,20 @@ def configure(paths):
 
     if not paths:
         return
-    for path in [normalize_path(p) for p in paths]:
+    for path in [normalize_path(p, relative_to) for p in paths]:
         logger.debug('configuration path {0}'.format(path))
         pubkeys_path = join(path, PUBKEYSDIR)
         if os.path.exists(pubkeys_path):
             load_pubkeys(pubkeys_path, PUBKEYS)
         init_module(path)
 
-def configure_cwd(paths):
-
-    """Configure with non-absolute paths relative to current working dir"""
-
-    cwd = os.getcwd()
-    configure([join(cwd, p) for p in paths if not os.path.isabs(p)])
-
 def parser():
 
-    """Return a parser for setting multiple configuration paths"""
+    """Return a parser for setting one or more configuration paths"""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config_paths', default=[], action='append')
+    parser.add_argument('-c', '--config_paths', default=[], action='append',
+                        help='Path to a configuration directory')
     return parser
 
 def add_auth_args(parser, config):
@@ -282,11 +279,11 @@ def reconfig(main_parser, args=sys.argv[1:]):
     Return parsed remaining arguments"""
 
     parsed, remaining_args = parser().parse_known_args(args)
-    configure_cwd(parsed.config_paths)
+    configure(parsed.config_paths, os.getcwd())
     return main_parser().parse_args(remaining_args)
 
 defaults = ['defaults']
 if os.path.exists(LOCAL_DEFAULTS):
     defaults.append(LOCAL_DEFAULTS)
-configure(defaults)
+configure(defaults, CODEPATH)
 
