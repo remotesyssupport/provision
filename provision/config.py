@@ -263,7 +263,7 @@ def parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config_paths', default=[], action='append',
-                        help='Path to a configuration directory')
+                        help='path to a configuration directory')
     return parser
 
 def add_auth_args(parser, config):
