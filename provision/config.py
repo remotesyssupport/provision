@@ -113,6 +113,8 @@ def handle_errors(callback, parsed=None, out=sys.stderr):
         if 'Service Unavailable' in e.body:
             return SERVICE_UNAVAILABLE
         return MALFORMED_RESPONSE
+    except SystemExit:
+        pass
     except:
         traceback.print_exc(file=out)
         return EXCEPTION
