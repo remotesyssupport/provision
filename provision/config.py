@@ -34,7 +34,9 @@ PROVIDERS = {
 
 IMAGE_NAMES = {
     'karmic': 'Ubuntu 9.10 (karmic)',
-    'lucid': 'Ubuntu 10.04 LTS (lucid)'}
+    'lucid': 'Ubuntu 10.04 LTS (lucid)',
+    'maverick': 'Ubuntu 10.10 (maverick)',
+    'natty': 'Ubuntu 11.04 (Natty)'}
 
 DEFAULT_IMAGE_NAME = 'lucid'
 DEFAULT_LOCATION_ID = 0
