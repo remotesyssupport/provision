@@ -1,6 +1,13 @@
-0.9.1 Wed May  4 14:28:37 PDT 2011
+
+0.9.1 Wed Jul 27 15:36:52 PDT 2011
 
 * Add ability to specify images as bootstrapped to change default bundles
 * Order of bundles and scripts in bundles now preserved in script run order
-  
+* Add maverick and natty to image names
+* Add bootstrap-python bundle
+* Eliminate stack trace on normal exit
+* Improve documentation on shell commands
+* Give more detailed error information with exit codes
+* Fix bug in processing -c flags on command line
+* Support loading default provision_secrets in virtualenv directory
 
