@@ -1,3 +1,7 @@
+0.9.2
+
+* Change from automatic to explicit template declarations
+* Eliminate support for splitting scripts up by line
 
 0.9.1 Wed Jul 27 15:36:52 PDT 2011
 
