@@ -57,10 +57,6 @@ DEFAULT_NAME_PREFIX = 'deploy-test-'
 
 DESTROYABLE_PREFIXES = [DEFAULT_NAME_PREFIX]
 
-# Set to None or '' to ignore metadata
-NODE_METADATA_CONTAINER_NAME = 'node_meta'
-
-#SPLIT_RE = re.compile('split-lines:\W*true', re.IGNORECASE)
 TEMPLATE_RE = re.compile('#.+provision-template-type:\W*(?P<type>[\w-]+)')
 
 TEMPLATE_TYPEMAP = {
@@ -98,6 +94,13 @@ MALFORMED_RESPONSE = 12
 SERVICE_UNAVAILABLE = 13
 DEPLOYMENT_ERROR = 14
 TIMEOUT = 15
+
+def is_node_destroyable(name, prefixes=DESTROYABLE_PREFIXES):
+
+    """Return True if name starts with a destroyable prefix"""
+
+    return any([name.startswith(p) for p in prefixes])
+
 
 def handle_errors(callback, parsed=None, out=sys.stderr):
 
