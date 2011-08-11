@@ -11,7 +11,7 @@ DOWNLOAD_DIR=~/python_bootstrap
 mkdir -p $DOWNLOAD_DIR
 echo "Will download files to $DOWNLOAD_DIR"
 
-download_file() {{
+download_file() {
   echo wget -q -O $DOWNLOAD_DIR/$1 $2
   wget -q -O $DOWNLOAD_DIR/$1 $2
   http_rc=$?
@@ -23,7 +23,7 @@ download_file() {{
     echo "Downloaded file $1 not found"
     exit 1
   fi
-}}
+}
 
 echo apt-get install -y python-dev
 apt-get install -y python-dev
