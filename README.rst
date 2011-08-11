@@ -174,8 +174,27 @@ memory, and are mapped into bundles in __init__.py, which can then be
 specified in the command line using -b bundle-name, or added to
 DEFAULT_BUNDLES, to get installed for every deploy.
 
-The __init__.py can also be used to override default settings in the
-provision.config module, which gets passed into init() as a parameter.
+It is sometimes useful to be able to substitute variables into scripts
+at runtime.  This can be done by using the --subvars command line
+option with script templating.
+
+Embed one of the following lines in a script to activate variable
+substitution::
+
+    # provision-template-type: format-string
+    or
+    # provision-template-type: template-string
+
+See `format string documentation
+<http://docs.python.org/library/string.html#format-string-syntax>`_
+and `template strings documentation
+<http://docs.python.org/library/string.html#template-strings>`_ for
+the respective syntaxes.  Also see test cases in
+test_script_templates.py.
+
+The __init__.py file can also be used to override default settings in
+the provision.config module, which gets passed into init() as a
+parameter.
 
 This is an example of an __init__.py file::
 
@@ -206,5 +225,3 @@ Default Configuration Directory Locations
 When provision.config is first imported, it will try to load
 configuration directory in ~/.provision/secrets.  If it cannot locate
 one, it will then try $VIRTUAL_ENV/provision_secrets.
-
-

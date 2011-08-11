@@ -60,7 +60,15 @@ DESTROYABLE_PREFIXES = [DEFAULT_NAME_PREFIX]
 # Set to None or '' to ignore metadata
 NODE_METADATA_CONTAINER_NAME = 'node_meta'
 
-SPLIT_RE = re.compile('split-lines:\W*true', re.IGNORECASE)
+#SPLIT_RE = re.compile('split-lines:\W*true', re.IGNORECASE)
+TEMPLATE_RE = re.compile('#.+provision-template-type:\W*(?P<type>[\w-]+)')
+
+TEMPLATE_TYPEMAP = {
+    # http://docs.python.org/library/string.html#format-string-syntax
+    'format-string': lambda text, submap: text.format(**submap),
+    # http://docs.python.org/library/string.html#template-strings
+    'template-string': lambda text, submap: string.Template(text).safe_substitute(submap),
+    }
 
 CODEPATH = os.path.dirname(__file__)
 

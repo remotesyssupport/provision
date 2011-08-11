@@ -7,6 +7,7 @@ import itertools
 import json
 import os
 import re
+import string
 
 import libcloud.providers
 import libcloud.deployment
@@ -30,10 +31,6 @@ def get_driver(secret_key=config.DEFAULT_SECRET_KEY, userid=config.DEFAULT_USERI
 def list_nodes(driver):
     logger.debug('list_nodes')
     return driver.list_nodes()
-
-
-def flatten(lst):
-    return list(itertools.chain(*lst))
 
 
 class NodeProxy(object):
@@ -88,25 +85,32 @@ class NodeProxy(object):
         return sum([sd.exit_status for sd in self.node.script_deployments])
 
 
-def named_script_deployments(path, script, submap=None):
+def substitute(script, submap):
 
-    """Perform variable substition on script, possibly breaking into
-    separate scripts per line, and return a list of ScriptDeployments."""
+    """Check for presence of template indicator and if found, perform
+    variable substition on script based on template type, returning
+    script."""
+
+    match = config.TEMPLATE_RE.search(script)
+    if match:
+        template_type = match.groupdict()['type']
+        try:
+            return config.TEMPLATE_TYPEMAP[template_type](script, submap)
+        except KeyError:
+            logger.error('Unsupported template type: %s' % template_type)
+            raise
+    return script
+
+
+def script_deployment(path, script, submap=None):
+
+    """Return a ScriptDeployment from script with possible template
+    substitutions."""
 
     if submap is None:
         submap = {}
-
-    if config.SPLIT_RE.search(script):
-        lines = script.split('\n')
-        deployments = []
-        base, ext = os.path.splitext(path)
-        for number, line in enumerate(lines):
-            linepath = '%s_%02d%s' % (base, number, ext) #TODO: smarter or configurable
-            deployments.append(
-                libcloud.deployment.ScriptDeployment(line.format(**submap), linepath))
-        return deployments
-    else:
-        return [libcloud.deployment.ScriptDeployment(script.format(**submap), path)]
+    script = substitute(script, submap)
+    return libcloud.deployment.ScriptDeployment(script, path)
 
 
 def merge_load(items, amap):
@@ -184,9 +188,8 @@ class Deployment(object):
         logger.debug('files {0}'.format(self.filemap.keys()))
         logger.debug('scripts {0}'.format(scriptmap.keys()))
 
-        self.script_deployments = flatten(
-            [named_script_deployments(path, script, config.SUBMAP)
-             for path, script in scriptmap.items()])
+        self.script_deployments = [script_deployment(path, script, config.SUBMAP)
+                                   for path, script in scriptmap.items()]
         logger.debug('len(script_deployments) = {0}'.format(len(self.script_deployments)))
 
         steps = [libcloud.deployment.SSHKeyDeployment(''.join(self.pubkeys))]
