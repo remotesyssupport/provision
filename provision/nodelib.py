@@ -35,10 +35,11 @@ def list_nodes(driver):
 
 class NodeProxy(object):
 
-    """Wrap a libcloud.base.Node object and adds some functionality"""
+    """Wrap a libcloud.base.Node object and add some functionality"""
 
-    def __init__(self, node):
+    def __init__(self, node, image):
         self.node = node
+        self.image = image
 
     def __getattr__(self, name):
         return getattr(self.node, name)
@@ -49,7 +50,9 @@ class NodeProxy(object):
             'name': self.node.name,
             'state': self.node.state,
             'public_ip': self.node.public_ip,
-            'private_ip': self.node.private_ip}
+            'private_ip': self.node.private_ip,
+            'image_id': self.image.id,
+            'image_name': self.image.name}
         with open(path, 'wb') as df:
             json.dump(info, df)
             df.close()
@@ -228,7 +231,8 @@ class Deployment(object):
         node = driver.deploy_node(name=self.name, ex_files=self.filemap, deploy=self.deployment,
                                   location=location, image=image, size=size)
         node.script_deployments = self.script_deployments # retain exit_status, stdout, stderr
-        return NodeProxy(node)
+        logger.debug('node.extra["imageId"] %s' % node.extra['imageId'])
+        return NodeProxy(node, image)
 
 
 def image_from_name(name, images):
