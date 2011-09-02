@@ -2,7 +2,6 @@ import unittest
 
 import provision.config as config
 import provision.nodelib as nodelib
-import provision.meta as meta
 
 class TestLifecycle(unittest.TestCase):
 
@@ -16,4 +15,3 @@ class TestLifecycle(unittest.TestCase):
         import time; time.sleep(10)
         assert node.destroy()
         assert node.name not in [n.name for n in driver.list_nodes()]
-        assert node.name not in meta.get_container((driver.key, driver.secret)).list_objects()

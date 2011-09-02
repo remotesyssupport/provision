@@ -12,7 +12,6 @@ import string
 import libcloud.providers
 import libcloud.deployment
 
-import provision.meta as meta
 import provision.config as config
 import provision.collections
 logger = config.logger
@@ -67,19 +66,12 @@ class NodeProxy(object):
 
     def destroy(self):
 
-        """Perform failsafe checks to insure only expendable nodes are destroyed"""
+        """Insure only destroyable nodes are destroyed"""
 
         node = self.node
-        if config.NODE_METADATA_CONTAINER_NAME:
-            container = meta.get_container(creds=(node.driver.key, node.driver.secret))
-            if not meta.node_destroyable(container, node.name):
-                logger.error('metadata does not indicate node %s is destroyable' % node.name)
-                return False
-            meta.delete_node_metadata(container, node.name)
-        else:
-            if all([not node.name.startswith(pre) for pre in config.DESTROYABLE_PREFIXES]):
-                logger.error('node %s has non-destroyable prefix' % node.name)
-                return False
+        if not config.is_node_destroyable(node.name):
+            logger.error('node %s has non-destroyable prefix' % node.name)
+            return False
         logger.info('destroying node %s' % node)
         return node.destroy()
 
@@ -206,12 +198,8 @@ class Deployment(object):
         location id and size id.
 
         First, obtain location object from driver.  Next, get the
-        size.  Then, get the image.
-
-        If using cloudfiles and have specified metadata container
-        name, save relevant information to cloudfiles.
-
-        Finally, deploy node, and return NodeProxy. """
+        size.  Then, get the image. Finally, deploy node, and return
+        NodeProxy. """
 
         logger.debug('deploying node %s using driver %s' % (self.name, driver))
         location = driver.list_locations()[location_id]
@@ -222,12 +210,6 @@ class Deployment(object):
         image = image_from_name(config.IMAGE_NAMES[self.image_name], driver.list_images())
         logger.debug('image %s' % image)
 
-        self.metadata = {'created': str(datetime.datetime.now())}
-        if config.NODE_METADATA_CONTAINER_NAME:
-            meta.save_node_metadata(meta.get_container(creds=(driver.key, driver.secret)),
-                                    self.name, self.metadata,
-                                    destroyable=any([self.name.startswith(p)
-                                                     for p in config.DESTROYABLE_PREFIXES]))
         logger.debug('starting node deployment with %s steps' % len(self.deployment.steps))
         node = driver.deploy_node(name=self.name, ex_files=self.filemap, deploy=self.deployment,
                                   location=location, image=image, size=size)
