@@ -112,6 +112,7 @@ def handle_errors(callback, parsed=None, out=sys.stderr):
         else:
             return callback()
     except libcloud.types.DeploymentError as e:
+        traceback.print_exc(file=out)
         print(e, file=out)
         if hasattr(e, 'value') and hasattr(e.value, 'args') and len(e.value.args) > 0 and \
                 'open_sftp_client' in e.value.args[0]:
@@ -119,6 +120,7 @@ def handle_errors(callback, parsed=None, out=sys.stderr):
             return TIMEOUT
         return DEPLOYMENT_ERROR
     except libcloud.types.MalformedResponseError as e:
+        traceback.print_exc(file=out)
         print(e, file=out)
         if 'Service Unavailable' in e.body:
             return SERVICE_UNAVAILABLE
