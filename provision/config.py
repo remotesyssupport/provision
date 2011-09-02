@@ -21,7 +21,7 @@ import string
 import sys
 import traceback
 
-import socket; socket.setdefaulttimeout(30.0) # give APIs plenty of time
+import socket; socket.setdefaulttimeout(600.0) # give APIs 10 minutes
 
 import libcloud.types
 
