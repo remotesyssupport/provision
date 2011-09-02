@@ -218,6 +218,7 @@ class Deployment(object):
         logger.debug('location %s' % location)
         size = driver.list_sizes()[size_id]
         logger.debug('size %s' % size)
+        logger.debug('image name %s' % config.IMAGE_NAMES[self.image_name])
         image = image_from_name(config.IMAGE_NAMES[self.image_name], driver.list_images())
         logger.debug('image %s' % image)
 
