@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='provision',
-    version='0.9.2',
+    version='0.9.3-dev',
     author='genForma Corporation',
     author_email='code@genforma.com',
     url='https://github.com/genforma/provision',
@@ -15,8 +15,7 @@ setup(
             'deploy-node = provision.deploy:main',
             'destroy-node = provision.destroy:main',
             ]},
-    install_requires=['apache-libcloud>=0.4.0',
-                      'argparse>=1.1',
+    install_requires=['argparse>=1.1',
                       'pycrypto>=2.1.0',
                       'paramiko>=1.7.6',],
     test_suite = 'test',
