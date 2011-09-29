@@ -1,5 +1,5 @@
 # http://www.it-slav.net/blogs/2009/02/05/install-and-configure-snmp-on-ubuntu/
-apt-get -y install snmpd
+apt-get -y install snmpd # libsmi2-common
 mv /etc/snmp/snmpd.conf /etc/snmp/snmpd.conf.orig
 echo "rocommunity public" >> /etc/snmp/snmpd.conf
 cp /etc/default/snmpd /etc/default/snmpd.orig
