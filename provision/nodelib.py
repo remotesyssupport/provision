@@ -9,8 +9,10 @@ import os
 import re
 import string
 
-import libcloud.providers
-import libcloud.deployment
+import libcloud.compute.providers
+import libcloud.compute.deployment
+import libcloud.compute.ssh
+from libcloud.compute.types import NodeState
 
 import provision.config as config
 import provision.collections
@@ -24,12 +26,13 @@ def get_driver(secret_key=config.DEFAULT_SECRET_KEY, userid=config.DEFAULT_USERI
     stale, so obtain them as late as possible, and don't cache them."""
 
     logger.debug('get_driver {0}@{1}'.format(userid, provider))
-    return libcloud.providers.get_driver(config.PROVIDERS[provider])(userid, secret_key)
+    return libcloud.compute.providers.get_driver(
+        config.PROVIDERS[provider])(userid, secret_key)
 
 
 def list_nodes(driver):
     logger.debug('list_nodes')
-    return driver.list_nodes()
+    return [n for n in driver.list_nodes() if n.state != NodeState.TERMINATED]
 
 
 class NodeProxy(object):
@@ -58,7 +61,7 @@ class NodeProxy(object):
 
     def __repr__(self):
         s = self.node.__repr__()
-        if self.node.script_deployments:
+        if hasattr(self.node, 'script_deployments') and self.node.script_deployments:
             s += '\n'.join(
                 ['*{0.name}: {0.exit_status}\n{0.script}\n{0.stdout}\n{0.stderr}'.format(sd)
                  for sd in self.node.script_deployments])
@@ -105,17 +108,20 @@ def script_deployment(path, script, submap=None):
     if submap is None:
         submap = {}
     script = substitute(script, submap)
-    return libcloud.deployment.ScriptDeployment(script, path)
+    return libcloud.compute.deployment.ScriptDeployment(script, path)
 
 
-def merge_load(items, amap):
+def merge(items, amap, load=False):
 
-    """Merge list of tuples into dict amap and load source as value"""
+    """Merge list of tuples into dict amap, and optionally load source as value"""
 
     for target, source in items:
         if amap.get(target):
             logger.warn('overwriting {0}'.format(target))
-        amap[target] = open(source).read()
+        if load:
+            amap[target] = open(source).read()
+        else:
+            amap[target] = source
 
 
 def merge_keyvals_into_map(keyvals, amap):
@@ -167,7 +173,7 @@ class Deployment(object):
 
         self.image_name = image_name
 
-        self.filemap = {}
+        filemap = {}
         scriptmap = provision.collections.OrderedDict() # preserve script run order
 
         if image_name in config.BOOTSTRAPPED_IMAGE_NAMES:
@@ -178,18 +184,24 @@ class Deployment(object):
 
         for bundle in install_bundles:
             logger.debug('loading bundle {0}'.format(bundle))
-            merge_load(config.BUNDLEMAP[bundle].filemap.items(), self.filemap)
-            merge_load(config.BUNDLEMAP[bundle].scriptmap.items(), scriptmap)
-        logger.debug('files {0}'.format(self.filemap.keys()))
+            merge(config.BUNDLEMAP[bundle].filemap.items(), filemap)
+            merge(config.BUNDLEMAP[bundle].scriptmap.items(), scriptmap, load=True)
+        logger.debug('files {0}'.format(filemap.keys()))
+        logger.debug('files {0}'.format(filemap.values()))
         logger.debug('scripts {0}'.format(scriptmap.keys()))
+
+        file_deployments = [libcloud.compute.deployment.FileDeployment(
+                target, source) for target, source in filemap.items()]
+        logger.debug('len(file_deployments) = {0}'.format(len(file_deployments)))
 
         self.script_deployments = [script_deployment(path, script, config.SUBMAP)
                                    for path, script in scriptmap.items()]
         logger.debug('len(script_deployments) = {0}'.format(len(self.script_deployments)))
 
-        steps = [libcloud.deployment.SSHKeyDeployment(''.join(self.pubkeys))]
+        steps = [libcloud.compute.deployment.SSHKeyDeployment(''.join(self.pubkeys))]
+        steps.extend(file_deployments)
         steps.extend(self.script_deployments)
-        self.deployment = libcloud.deployment.MultiStepDeployment(steps)
+        self.deployment = libcloud.compute.deployment.MultiStepDeployment(steps)
 
     def deploy(self, driver, location_id=config.DEFAULT_LOCATION_ID,
                size_id=config.DEFAULT_SIZE_ID):
@@ -201,21 +213,60 @@ class Deployment(object):
         size.  Then, get the image. Finally, deploy node, and return
         NodeProxy. """
 
+        args = {'name': self.name}
+
+        if 'SSH_KEY_PATH' in config.__dict__:
+            args['ex_keyname'] = re.search('(?P<keyname>[\w-]+).pem',
+                                           config.SSH_KEY_PATH).group('keyname')
+        if 'EX_USERDATA' in config.__dict__:
+            args['ex_userdata'] = config.EX_USERDATA
+
         logger.debug('deploying node %s using driver %s' % (self.name, driver))
-        location = driver.list_locations()[location_id]
-        logger.debug('location %s' % location)
-        size = driver.list_sizes()[size_id]
-        logger.debug('size %s' % size)
+
+        args['location'] = driver.list_locations()[location_id]
+        logger.debug('location %s' % args['location'])
+
+        args['size'] = driver.list_sizes()[size_id]
+        logger.debug('size %s' % args['size'])
+
         logger.debug('image name %s' % config.IMAGE_NAMES[self.image_name])
-        image = image_from_name(config.IMAGE_NAMES[self.image_name], driver.list_images())
-        logger.debug('image %s' % image)
+        args['image'] = image_from_name(
+            config.IMAGE_NAMES[self.image_name], driver.list_images())
+        logger.debug('image %s' % args['image'])
+
+        logger.debug('creating node with args: %s' % args)
+        node = driver.create_node(**args)
+        logger.debug('node created')
+
+        password = node.extra.get('password') \
+            if 'generates_password' in driver.features['create_node'] else None
+
+        logger.debug('waiting for node to obtain public IP address')
+        node = driver.wait_until_running(node)
+
+        ssh_args = {'hostname': node.public_ip[0],
+                    'port': 22,
+                    'timeout': 10}
+        if password:
+            ssh_args['password'] = password
+        else:
+            ssh_args['key'] = config.SSH_KEY_PATH
+
+        logger.debug('initializing ssh client with %s' % ssh_args)
+        ssh_client = libcloud.compute.ssh.SSHClient(**ssh_args)
+
+        logger.debug('ssh client attempting to connect')
+        ssh_client = driver.connect_ssh_client(ssh_client)
+        logger.debug('ssh client connected')
 
         logger.debug('starting node deployment with %s steps' % len(self.deployment.steps))
-        node = driver.deploy_node(name=self.name, ex_files=self.filemap, deploy=self.deployment,
-                                  location=location, image=image, size=size)
+        driver.run_deployment_script(self.deployment, node, ssh_client)
+
         node.script_deployments = self.script_deployments # retain exit_status, stdout, stderr
+
         logger.debug('node.extra["imageId"] %s' % node.extra['imageId'])
-        return NodeProxy(node, image)
+
+        return NodeProxy(node, args['image'])
 
 
 def image_from_name(name, images):

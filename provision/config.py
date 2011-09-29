@@ -23,14 +23,15 @@ import traceback
 
 import socket; socket.setdefaulttimeout(600.0) # give APIs 10 minutes
 
-import libcloud.types
+from libcloud.compute.types import Provider, DeploymentError
+from libcloud.common.types import MalformedResponseError
 
 import provision.collections
 
 join = os.path.join
 
 PROVIDERS = {
-    'rackspace': libcloud.types.Provider.RACKSPACE}
+    'rackspace': Provider.RACKSPACE}
 
 IMAGE_NAMES = {
     'karmic': 'Ubuntu 9.10 (karmic)',
@@ -114,7 +115,7 @@ def handle_errors(callback, parsed=None, out=sys.stderr):
             return callback(parsed)
         else:
             return callback()
-    except libcloud.types.DeploymentError as e:
+    except DeploymentError as e:
         traceback.print_exc(file=out)
         print(e, file=out)
         if hasattr(e, 'value') and hasattr(e.value, 'args') and len(e.value.args) > 0 and \
@@ -122,7 +123,7 @@ def handle_errors(callback, parsed=None, out=sys.stderr):
             print('Timeout', file=out)
             return TIMEOUT
         return DEPLOYMENT_ERROR
-    except libcloud.types.MalformedResponseError as e:
+    except MalformedResponseError as e:
         traceback.print_exc(file=out)
         print(e, file=out)
         if 'Service Unavailable' in e.body:
@@ -309,3 +310,5 @@ if os.path.exists(VIRTUAL_DEFAULTS):
     defaults.append(VIRTUAL_DEFAULTS)
 configure(defaults, CODEPATH)
 
+logger.debug('monkey patching libcloud')
+import provision.patches
