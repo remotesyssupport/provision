@@ -50,7 +50,7 @@ def ParamikoSSHClient_put(self, path, contents=None, chmod=None, mode='w'):
                 # catch EEXIST consistently *sigh*
                 pass
             sftp.chdir(part)
-    ak = sftp.file(tail,  mode=mode)
+    ak = sftp.file(tail, mode=mode)
     ak.write(contents)
     if chmod is not None:
         ak.chmod(chmod)
