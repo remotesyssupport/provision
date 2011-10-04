@@ -2,6 +2,12 @@
 Provision
 =========
 
+Philosophy
+==========
+
+Provision makes it easy to create cloud servers with complicated
+configurations from the command line.
+
 Introduction
 ============
 
@@ -10,12 +16,11 @@ commands, or as a Python library.  Building on Apache Libcloud, which
 provides a common API for various providers, Provision allows users to
 specify, for a new node, which files get installed, which scripts get
 run, and which public keys have access, in a flexible yet repeatable
-way.
+way.  Provision has been tested using Rackspace and Amazon AWS.
 
-In addition to basic configuration decisions (such as disk image,
-size, provider, location, and name), Provision supports four
-conceptually distinct components that determine how a node gets
-deployed.
+In addition to basic configuration decisions (such as provider, disk
+image, size, location, and name), Provision supports four conceptually
+distinct components that determine how a node gets deployed.
 
 #. Public keys that grant their respective private keys root access on
    the deployed node.
@@ -35,7 +40,7 @@ file, and possible subdirectories of files, scripts and public keys.
 
 These additional configuration directories can be used to change the
 default configuration parameters in any way, and are typically used to
-set secret API keys, access keys, and define site-specific
+set secret API keys, access keys, and define provider-specific
 functionality bundles.
 
 A Bundle is a named collection of files and scripts that will get
