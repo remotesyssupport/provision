@@ -1,6 +1,6 @@
 import unittest
 
-import libcloud.types
+import libcloud.compute.types
 
 import provision.config as config
 
@@ -28,13 +28,13 @@ class TestHandleErrors(unittest.TestCase):
 
     def test_service_unavailable(self):
         def raises():
-             raise libcloud.types.MalformedResponseError(
+             raise libcloud.compute.types.MalformedResponseError(
                  "Failed to parse XML", body='Service Unavailable', driver=object())
         assert config.handle_errors(raises, out=self.devnull) == config.SERVICE_UNAVAILABLE
 
     def test_malformed_response(self):
         def raises():
-             raise libcloud.types.MalformedResponseError(
+             raise libcloud.compute.types.MalformedResponseError(
                  "Failed to parse XML", body='A bad response', driver=object())
         assert config.handle_errors(raises, out=self.devnull) == config.MALFORMED_RESPONSE
 
@@ -43,7 +43,7 @@ class TestHandleErrors(unittest.TestCase):
             try:
                 None.open_sftp_client
             except AttributeError as e:
-                raise libcloud.types.DeploymentError(object(), e)
+                raise libcloud.compute.types.DeploymentError(object(), e)
         assert config.handle_errors(raises, out=self.devnull) == config.TIMEOUT
 
     def test_deployment_error(self):
@@ -51,5 +51,5 @@ class TestHandleErrors(unittest.TestCase):
             try:
                 None.foo
             except AttributeError as e:
-                raise libcloud.types.DeploymentError(object(), e)
+                raise libcloud.compute.types.DeploymentError(object(), e)
         assert config.handle_errors(raises, out=self.devnull) == config.DEPLOYMENT_ERROR

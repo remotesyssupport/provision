@@ -1,6 +1,6 @@
 import unittest
 
-import libcloud
+import libcloud.compute.deployment
 
 import provision.config as config
 import provision.nodelib as nodelib
@@ -17,4 +17,4 @@ class TestDeploy(unittest.TestCase):
     def test_node_deployment(self):
         nd = nodelib.Deployment(bundles=['mta'])
         assert nd.name.startswith(config.DEFAULT_NAME_PREFIX)
-        assert libcloud.deployment.SSHKeyDeployment == type(nd.deployment.steps[0])
+        assert libcloud.compute.deployment.SSHKeyDeployment == type(nd.deployment.steps[0])
